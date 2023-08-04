@@ -1,16 +1,20 @@
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-0,9,17,22,27,37,42,46,51,58 * * * *     www-data   php /var/www/html/bin/console mautic:reports:scheduler > /var/log/cron.pipe 2>&1
-5,10,15,20,25,35,40,50,55 * * * *     www-data   php /var/www/html/bin/console mautic:messages:send > /var/log/cron.pipe 2>&1
-0,9,17,22,27,37,42,46,51,58 * * * *     www-data   php /var/www/html/bin/console mautic:emails:send > /var/log/cron.pipe 2>&1
-0,6,13,18,24,29,34,39,53,59 * * * *     www-data   php /var/www/html/bin/console mautic:campaigns:trigger > /var/log/cron.pipe 2>&1
+8,23,38,52 * * * *     www-data   php /var/www/html/bin/console mautic:segments:update > /var/log/cron.pipe 2>&1
+       */5 * * * *     www-data   php /var/www/html/bin/console mautic:import > /var/log/cron.pipe 2>&1
+5,20,35,50 * * * *     www-data   php /var/www/html/bin/console mautic:campaigns:rebuild > /var/log/cron.pipe 2>&1
+2,17,32,47 * * * *     www-data   php /var/www/html/bin/console mautic:campaigns:trigger > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:messages:send > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:emails:send > /var/log/cron.pipe 2>&1
 0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:email:fetch > /var/log/cron.pipe 2>&1
 0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:social:monitoring > /var/log/cron.pipe 2>&1
-0,6,13,18,24,29,34,39,53,59 * * * *     www-data   php /var/www/html/bin/console mautic:broadcasts:send > /var/log/cron.pipe 2>&1
 0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:webhooks:process > /var/log/cron.pipe 2>&1
-4,8,12,16,23,27,32,38,52,56 * * * *     www-data   php /var/www/html/bin/console mautic:segments:update > /var/log/cron.pipe 2>&1
-2,7,11,17,22,26,31,36,41,47,54 * * *      www-data   php /var/www/html/bin/console mautic:campaigns:rebuild > /var/log/cron.pipe 2>&1
-       */5 * * * *     www-data   php /var/www/html/bin/console mautic:import > /var/log/cron.pipe 2>&1
-       * 1 * * *     www-data   php /var/www/html/bin/console mautic:maintenance:cleanup --days-old=365 > /var/log/cron.pipe 2>&1
-       0 4 15 * *     www-data   php /var/www/html/bin/console mautic:iplookup:download > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     www-data   php /var/www/html/bin/console mautic:broadcasts:send > /var/log/cron.pipe 2>&1
+         * 1 * * *     www-data   php /var/www/html/bin/console mautic:maintenance:cleanup --days-old=365 > /var/log/cron.pipe 2>&1
+        0 4 15 * *     www-data   php /var/www/html/bin/console mautic:iplookup:download > /var/log/cron.pipe 2>&1
+       */5 * * * *     www-data   php /var/www/html/bin/console mautic:reports:scheduler > /var/log/cron.pipe 2>&1
+        0 5 10 * *     www-data   php /var/www/html/bin/console mautic:unusedip:delete > /var/log/cron.pipe 2>&1
+
+# download geoip db on start if it does not exist
+@reboot                www-data   [[ "$(ls -A /var/www/html/bin/cache/ip_data 2>/dev/null)" ]] || php /var/www/html/bin mautic:iplookup:download > /var/log/cron.pipe 2>&1
