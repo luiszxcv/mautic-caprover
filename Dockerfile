@@ -1,7 +1,6 @@
 FROM php:7.4-apache
 
 LABEL vendor="Mautic"
-
 LABEL maintainer="Luiz Eduardo Oliveira Fonseca <luiz@powertic.com>"
 
 # Install PHP extensions
