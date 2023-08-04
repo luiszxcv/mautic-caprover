@@ -1,61 +1,34 @@
-FROM php:7.4-apache
+FROM php:7.4-fpm
 
 LABEL vendor="Mautic"
-
 LABEL maintainer="Luiz Eduardo Oliveira Fonseca <luiz@powertic.com>"
 
 # Install PHP extensions
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    ca-certificates \
-    build-essential  \
-    software-properties-common \
     cron \
     git \
-    htop \
     wget \
-    dos2unix \
-    curl \
-    libcurl4-gnutls-dev \
     sudo \
     libc-client-dev \
+    libicu-dev \
     libkrb5-dev \
     libmcrypt-dev \
-    libssl-dev \
-    libxml2-dev \
     libzip-dev \
-    libjpeg-dev \
-    libmagickwand-dev \
-    libpng-dev \
-    libgif-dev \
-    libtiff-dev \
+    libssl-dev \
     libz-dev \
-    libpq-dev \
-    imagemagick \
-    graphicsmagick \
-    libwebp-dev \
-    libjpeg62-turbo-dev \
-    libxpm-dev \
-    libaprutil1-dev \
-    libicu-dev \
-    libfreetype6-dev \
     libonig-dev \
     unzip \
-    nano \
     zip \
-    mariadb-client \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/* \
     && rm /etc/cron.daily/*
 
-RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
-    docker-php-ext-install imap && \
-    docker-php-ext-enable imap
+RUN pecl install mcrypt-1.0.3
 
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install  gd \
+RUN docker-php-ext-configure imap --with-imap --with-imap-ssl --with-kerberos \
     && docker-php-ext-configure opcache --enable-opcache \
-    && docker-php-ext-install intl mbstring mysqli curl pdo_mysql zip opcache bcmath gd sockets exif \
-    && docker-php-ext-enable intl mbstring mysqli curl pdo_mysql zip opcache bcmath gd sockets exif
+    && docker-php-ext-install imap intl mbstring mysqli pdo_mysql zip opcache bcmath sockets exif \
+    && docker-php-ext-enable imap intl mbstring mcrypt mysqli pdo_mysql zip opcache bcmath sockets exif
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
@@ -73,19 +46,15 @@ ENV MAUTIC_RUN_CRON_JOBS true
 # By default disable automatic migrations
 ENV MAUTIC_RUN_MIGRATIONS false
 
-# Setting an Default database user for Mysql
+# Setting an root user for test
 ENV MAUTIC_DB_USER root
-
-# Setting an Default database name for Mysql
 ENV MAUTIC_DB_NAME mautic
-
-# Set up mysql port
 ENV MAUTIC_DB_PORT 3306
 
 # Setting PHP properties
 ENV PHP_INI_DATE_TIMEZONE='UTC' \
     PHP_MEMORY_LIMIT=512M \
-    PHP_MAX_UPLOAD=512M \
+    PHP_MAX_UPLOAD=128M \
     PHP_MAX_EXECUTION_TIME=300
 
 # Download package and extract to web volume
@@ -103,11 +72,8 @@ COPY common/makedb.php /makedb.php
 COPY common/mautic.crontab /etc/cron.d/mautic
 RUN chmod 644 /etc/cron.d/mautic
 
-# Enable Apache Rewrite Module
-RUN a2enmod rewrite
-
 # Apply necessary permissions
 RUN ["chmod", "+x", "/entrypoint.sh"]
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["apache2-foreground"]
+CMD ["php-fpm"]
