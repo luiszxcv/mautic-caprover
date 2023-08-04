@@ -1,7 +1,8 @@
 FROM php:7.4-apache
 
 LABEL vendor="Mautic"
-LABEL maintainer="Aaron Holt <mrholttn@gmail.com>"
+
+LABEL maintainer="Luiz Eduardo Oliveira Fonseca <luiz@powertic.com>"
 
 # Install PHP extensions
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -46,11 +47,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/* \
     && rm /etc/cron.daily/*
 
-RUN docker-php-ext-configure imap --with-imap --with-imap-ssl --with-kerberos \
-    && docker-php-ext-configure opcache --enable-opcache \
-    && docker-php-ext-install imap intl mbstring mcrypt mysqli pdo_mysql zip opcache bcmath\
-    && docker-php-ext-enable imap intl mbstring mcrypt mysqli pdo_mysql zip opcache bcmath
-
 RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
     docker-php-ext-install imap && \
     docker-php-ext-enable imap
@@ -79,22 +75,26 @@ ENV MAUTIC_RUN_MIGRATIONS false
 
 # Setting an Default database user for Mysql
 ENV MAUTIC_DB_USER root
+
 # Setting an Default database name for Mysql
 ENV MAUTIC_DB_NAME mautic
 
+# Set up mysql port
+ENV MAUTIC_DB_PORT 3306
+
 # Setting PHP properties
 ENV PHP_INI_DATE_TIMEZONE='UTC' \
-	PHP_MEMORY_LIMIT=512M \
-	PHP_MAX_UPLOAD=128M \
-	PHP_MAX_EXECUTION_TIME=300
+    PHP_MEMORY_LIMIT=512M \
+    PHP_MAX_UPLOAD=512M \
+    PHP_MAX_EXECUTION_TIME=300
 
 # Download package and extract to web volume
 RUN curl -o mautic.zip -SL https://github.com/mautic/mautic/releases/download/${MAUTIC_VERSION}/${MAUTIC_VERSION}.zip \
-	&& echo "$MAUTIC_SHA1 *mautic.zip" | sha1sum -c - \
-	&& mkdir /usr/src/mautic \
-	&& unzip mautic.zip -d /usr/src/mautic \
-	&& rm mautic.zip \
-	&& chown -R www-data:www-data /usr/src/mautic
+    && echo "$MAUTIC_SHA1 *mautic.zip" | sha1sum -c - \
+    && mkdir /usr/src/mautic \
+    && unzip mautic.zip -d /usr/src/mautic \
+    && rm mautic.zip \
+    && chown -R www-data:www-data /usr/src/mautic
 
 # Copy init scripts and custom .htaccess
 COPY common/docker-entrypoint.sh /entrypoint.sh
@@ -102,7 +102,6 @@ COPY common/makeconfig.php /makeconfig.php
 COPY common/makedb.php /makedb.php
 COPY common/mautic.crontab /etc/cron.d/mautic
 RUN chmod 644 /etc/cron.d/mautic
-
 
 # Enable Apache Rewrite Module
 RUN a2enmod rewrite
